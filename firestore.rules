@@ -1,0 +1,187 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: entrada
+// Fields:
+//   - property: map
+//   - sales_team: map
+//   - customers: list
+//   - address: map
+//   - valorTotalProposta: number
+//   - valorEntrada: number
+//   - status: string
+//   - created_at: string
+//   - updated_at: string
+//   - spreadsheet_id: string
+//   - drive_link: string
+//   - storage_folder: string (Firebase Storage folder key)
+//   - stored_files: list (Firebase Storage uploaded file metadata)
+//   - uid: string (owner ID)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Global Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == "propostasrej@gmail.com" && request.auth.token.email_verified == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ===============================================================
+    // Validation Helpers
+    // ===============================================================
+
+    function isValidEntrada(data) {
+      return (!('property' in data) || data.property is map) &&
+             (!('customers' in data) || data.customers is list) &&
+             (!('valorTotalProposta' in data) || data.valorTotalProposta is number || data.valorTotalProposta == null) &&
+             (!('status' in data) || (data.status is string && data.status.size() <= 64)) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('spreadsheet_id' in data) || (data.spreadsheet_id is string && data.spreadsheet_id.size() <= 200) || data.spreadsheet_id == null) &&
+             (!('drive_link' in data) || (data.drive_link is string && data.drive_link.size() <= 500) || data.drive_link == null) &&
+             (!('storage_folder' in data) || (data.storage_folder is string && data.storage_folder.size() <= 300) || data.storage_folder == null) &&
+             (!('stored_files' in data) || (data.stored_files is list && data.stored_files.size() <= 100) || data.stored_files == null) &&
+             (!('valorEntrada' in data) || data.valorEntrada is number || data.valorEntrada == null) &&
+             (!('percentualComissao' in data) || data.percentualComissao is number || data.percentualComissao == null) &&
+             (!('commissioned_parties' in data) || data.commissioned_parties is list || data.commissioned_parties == null) &&
+             (!('commissionedParties' in data) || data.commissionedParties is list || data.commissionedParties == null) &&
+             (!('manual_waterfall' in data) || data.manual_waterfall is map || data.manual_waterfall == null) &&
+             (!('simulationResult' in data) || data.simulationResult is map || data.simulationResult == null) &&
+             (!('condicaoPreco' in data) || data.condicaoPreco is list || data.condicaoPreco == null) &&
+             (!('condicaoComissao' in data) || data.condicaoComissao is list || data.condicaoComissao == null) &&
+             (!('valorTotalComissao' in data) || data.valorTotalComissao is number || data.valorTotalComissao == null) &&
+             (!('baseCalculoComissao' in data) || data.baseCalculoComissao is number || data.baseCalculoComissao == null) &&
+             (!('valorBonusExcluido' in data) || data.valorBonusExcluido is number || data.valorBonusExcluido == null) &&
+             (!('clicksign_envelope_id' in data) || (data.clicksign_envelope_id is string && data.clicksign_envelope_id.size() <= 128) || data.clicksign_envelope_id == null) &&
+             (!('clicksign_status' in data) || (data.clicksign_status is string && data.clicksign_status.size() <= 64) || data.clicksign_status == null) &&
+             (!('forma_pagamento_comissao' in data) || (data.forma_pagamento_comissao is string && data.forma_pagamento_comissao.size() <= 64) || data.forma_pagamento_comissao == null);
+    }
+
+    function isValidEmpreendimento(data) {
+      return (!('nome' in data) || (data.nome is string && data.nome.size() <= 200)) &&
+             (!('status' in data) || data.status in ["ATIVO", "INATIVO"]);
+    }
+
+    function isValidInstallmentConfig(data) {
+      return (!('descricao' in data) || (data.descricao is string && data.descricao.size() <= 100)) &&
+             (!('periodicidade' in data) || (data.periodicidade is number && data.periodicidade >= 1 && data.periodicidade <= 60));
+    }
+
+    function isValidCargo(data) {
+      return (!('nome' in data) || (data.nome is string && data.nome.size() <= 200));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      // Prevent self-assignment of admin role on creation unless bootstrapped admin email
+      allow create: if isSignedIn() && isValidId(userId) && (
+        isAdmin() ||
+        (isOwner(userId) && (!('role' in incoming()) || incoming().role in ['user', 'EV']))
+      );
+      allow update: if isSignedIn() && isValidId(userId) && (
+        isAdmin() ||
+        (isOwner(userId) && (!('role' in incoming()) || incoming().role == existing().role))
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /entrada/{entradaId} {
+      allow get: if isSignedIn() && isValidId(entradaId) && (isAdmin() || !('uid' in resource.data) || resource.data.uid == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || !('uid' in resource.data) || resource.data.uid == request.auth.uid);
+
+      allow create: if isSignedIn() && isValidId(entradaId) && (
+        isAdmin() ||
+        (('uid' in incoming() && incoming().uid == request.auth.uid) && isValidEntrada(incoming()))
+      );
+
+      allow update: if isSignedIn() && isValidId(entradaId) && (
+        isAdmin() ||
+        ((!('uid' in existing()) || existing().uid == request.auth.uid) &&
+         (!('uid' in incoming()) || incoming().uid == request.auth.uid || ('uid' in existing() && incoming().uid == existing().uid)) &&
+         isValidEntrada(incoming()))
+      );
+
+      allow delete: if isSignedIn() && isValidId(entradaId) && (isAdmin() || ('uid' in existing() && existing().uid == request.auth.uid));
+    }
+
+    match /empreendimentos/{empId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidId(empId) && isValidEmpreendimento(incoming());
+      allow update: if isAdmin() && isValidId(empId) && isValidEmpreendimento(incoming());
+      allow delete: if isAdmin() && isValidId(empId);
+    }
+
+    match /configuracoes_parcelas/{configId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && isValidId(configId) && isValidInstallmentConfig(incoming());
+      allow update: if isAdmin() && isValidId(configId) && isValidInstallmentConfig(incoming());
+      allow delete: if isAdmin() && isValidId(configId);
+    }
+
+    match /inbox/{inboxId} {
+      allow get: if isSignedIn() && isValidId(inboxId) && (isAdmin() || !('uid' in resource.data) || resource.data.uid == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || !('uid' in resource.data) || resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(inboxId) && (isAdmin() || !('uid' in incoming()) || incoming().uid == request.auth.uid);
+      allow update: if isSignedIn() && isValidId(inboxId) && (isAdmin() || !('uid' in existing()) || existing().uid == request.auth.uid);
+      allow delete: if isSignedIn() && isValidId(inboxId) && (isAdmin() || !('uid' in existing()) || existing().uid == request.auth.uid);
+    }
+
+    match /user_settings/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+    }
+
+    match /cargos/{cargoId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(cargoId) && isValidCargo(incoming());
+      allow update: if isSignedIn() && isValidId(cargoId) && isValidCargo(incoming()) && (isAdmin() || !('uid' in existing()) || existing().uid == request.auth.uid);
+      allow delete: if isSignedIn() && isValidId(cargoId) && (isAdmin() || !('uid' in existing()) || existing().uid == request.auth.uid);
+    }
+  }
+}

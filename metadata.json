@@ -1,0 +1,11 @@
+{
+  "name": "Secvendas R\u0026J",
+  "description": "Assistente especializado em extração de dados de documentos imobiliários, geração de relatórios técnicos e integração com Google Drive e Sheets.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,273 @@
+{
+  "entities": {
+    "Entrada": {
+      "title": "Entrada",
+      "description": "Documento de entrada extraído e processado",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "property": {
+          "type": "object",
+          "properties": {
+            "empreendimento": { "type": "string" },
+            "unidade": { "type": "string" },
+            "torre": { "type": "string" }
+          }
+        },
+        "sales_team": {
+          "type": "object",
+          "properties": {
+            "corretor1": { "type": "string" },
+            "corretor2": { "type": "string" },
+            "gerente": { "type": "string" }
+          }
+        },
+        "customers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nome": { "type": "string" },
+              "cpf": { "type": "string" },
+              "telefone": { "type": "string" },
+              "email": { "type": "string" }
+            }
+          }
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "cep": { "type": "string" },
+            "logradouro": { "type": "string" },
+            "numero": { "type": "string" },
+            "cidade": { "type": "string" },
+            "estado": { "type": "string" }
+          }
+        },
+        "valorTotalProposta": { "type": "number" },
+        "valorEntrada": { "type": "number" },
+        "spreadsheet_id": { "type": "string" },
+        "drive_link": { "type": "string" },
+        "storage_folder": {
+          "type": "string",
+          "description": "Caminho da pasta da proposta no Firebase Storage",
+          "maxLength": 300
+        },
+        "stored_files": {
+          "type": "array",
+          "description": "Lista de documentos e PDFs armazenados no Firebase Storage",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "docId": { "type": "string" },
+              "docType": { "type": "string" },
+              "fileName": { "type": "string" },
+              "contentType": { "type": "string" },
+              "size": { "type": "number" },
+              "storagePath": { "type": "string" },
+              "downloadUrl": { "type": "string" },
+              "uploadedAt": { "type": "string", "format": "date-time" },
+              "uploadedByUid": { "type": "string" }
+            }
+          }
+        },
+        "commissioned_parties": {
+          "type": "array",
+          "description": "Lista de participantes comissionados com taxas, proporções e nomes",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "name": { "type": "string" },
+              "percentage": { "type": "number" },
+              "taxaPremio": { "type": "number" },
+              "deduction": { "type": "number" },
+              "hideAndSum": { "type": "boolean" }
+            }
+          }
+        },
+        "commissionedParties": {
+          "type": "array",
+          "description": "Lista de participantes comissionados (alias)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "name": { "type": "string" },
+              "percentage": { "type": "number" },
+              "taxaPremio": { "type": "number" },
+              "deduction": { "type": "number" },
+              "hideAndSum": { "type": "boolean" }
+            }
+          }
+        },
+        "percentualComissao": {
+          "type": "number",
+          "description": "Taxa percentual global da comissão"
+        },
+        "valorTotalComissao": { "type": "number" },
+        "baseCalculoComissao": { "type": "number" },
+        "valorBonusExcluido": { "type": "number" },
+        "forma_pagamento_comissao": { "type": "string" },
+        "tipo_minuta_corretagem": { "type": "string" },
+        "proposta_status": { "type": "string" },
+        "cvc_status": { "type": "string" },
+        "corretagem_status": { "type": "string" },
+        "clicksign_envelope_id": { "type": "string", "maxLength": 128 },
+        "clicksign_status": { "type": "string", "maxLength": 64 },
+        "informacoes_adicionais": { "type": "string" },
+        "manual_waterfall": {
+          "type": "object",
+          "description": "Matriz completa e detalhes do rateio em cascata salvo"
+        },
+        "simulationResult": {
+          "type": "object",
+          "description": "Resultado completo da simulação de viabilidade e fluxo líquido"
+        },
+        "condicaoPreco": {
+          "type": "array",
+          "description": "Condição de pagamento líquida do preço para o incorporador"
+        },
+        "condicaoComissao": {
+          "type": "array",
+          "description": "Condição de pagamento da comissão aplicada sobre o fluxo"
+        },
+        "status": { "type": "string", "enum": ["na fila", "devolvida com pendencia", "contrato enviado", "escriturada", "cancelada"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string", "description": "ID do usuário que criou a entrada" }
+      },
+      "required": ["property", "customers", "valorTotalProposta", "status", "created_at", "uid"]
+    },
+    "Inbox": {
+      "title": "Inbox",
+      "description": "Documentos recebidos via Webhook ou Google Drive aguardando processamento",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "source": { "type": "string", "description": "Origem do documento (ex: Webhook, Drive)" },
+        "status": { "type": "string", "enum": ["pendente", "processado", "erro"] },
+        "metadata": { "type": "object" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fileUrl", "status", "created_at"]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Configurações personalizadas do usuário",
+      "type": "object",
+      "properties": {
+        "dashboard_spreadsheet_id": { "type": "string" },
+        "assinafy_envelopes": { "type": "array" },
+        "clicksign_envelopes": { "type": "array" },
+        "clicksign_env": { "type": "string", "enum": ["sandbox", "production"] },
+        "sound_notifications": { "type": "boolean" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Empreendimento": {
+      "title": "Empreendimento",
+      "description": "Cadastro de empreendimentos imobiliários",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string", "maxLength": 200 },
+        "construtora": { "type": "string" },
+        "localizacao": { "type": "string" },
+        "tabela_base_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["ATIVO", "INATIVO"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["nome", "status", "created_at", "uid"]
+    },
+    "InstallmentConfig": {
+      "title": "InstallmentConfig",
+      "description": "Configuração de periodicidade e descrição de parcelas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "descricao": { "type": "string", "maxLength": 100 },
+        "periodicidade": { "type": "number", "description": "Periodicidade em meses" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["descricao", "periodicidade", "created_at", "uid"]
+    },
+    "Cargo": {
+      "title": "Cargo",
+      "description": "Cadastro de participantes e cargos de vendas/comissão",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string", "maxLength": 200 },
+        "apelido": { "type": "string" },
+        "creci": { "type": "string" },
+        "cpf_cnpj": { "type": "string" },
+        "cargo": { "type": "string" },
+        "gerente": { "type": "string" },
+        "diretor": { "type": "string" },
+        "telefone": { "type": "string" },
+        "email": { "type": "string" },
+        "pix": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["nome", "created_at", "uid"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Dados de perfil e permissões do usuário",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user", "EV"] },
+        "webhookUrl": { "type": "string", "description": "URL externa para envio de webhooks de notificações e propostas" },
+        "webhookActive": { "type": "boolean", "description": "Se o envio de webhooks está ativo para este usuário" },
+        "webhookEvents": { "type": "array", "items": { "type": "string" }, "description": "Eventos a serem enviados para o webhook" },
+        "webhookToken": { "type": "string", "description": "Token de segurança para autenticação do webhook" },
+        "lastWebhookDispatch": { "type": "string", "description": "Timestamp do último disparo de webhook" },
+        "lastWebhookStatus": { "type": "string", "description": "Status HTTP ou mensagem do último disparo" }
+      },
+      "required": ["role"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Coleção de perfis de usuários e seus papéis"
+    },
+    "entrada": {
+      "schema": "Entrada",
+      "description": "Coleção de entradas extraídas e arquivos vinculados no Firebase Storage"
+    },
+    "inbox": {
+      "schema": "Inbox",
+      "description": "Fila de entrada de documentos pendentes"
+    },
+    "user_settings": {
+      "schema": "UserSettings",
+      "description": "Configurações personalizadas do usuário"
+    },
+    "empreendimentos": {
+      "schema": "Empreendimento",
+      "description": "Cadastro de empreendimentos"
+    },
+    "configuracoes_parcelas": {
+      "schema": "InstallmentConfig",
+      "description": "Configurações de periodicidade de parcelas"
+    },
+    "cargos": {
+      "schema": "Cargo",
+      "description": "Cadastro de participantes e cargos"
+    }
+  }
+}
